@@ -1,7 +1,5 @@
 'use strict';
 
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
 // BANKIST APP
 
 // Data
@@ -79,9 +77,10 @@ const displayMovements = function (movements) {
   });
 };
 
-const calcDisplayBalance = function (movements) {
-  const balance = movements.reduce((acc, mov) => acc + mov, 0);
-  labelBalance.textContent = `${balance}€`;
+const calcDisplayBalance = function (acc) {
+  const balance = acc.movements.reduce((acc, mov) => acc + mov, 0);
+  acc.balance = balance;
+  labelBalance.textContent = `${acc.balance}€`;
 };
 
 const calcDisplaySummery = function (acc) {
@@ -114,7 +113,19 @@ const createUserNames = function (accs) {
       .join('');
   });
 };
+
 createUserNames(accounts);
+
+const updateUI = function (acc) {
+  // Dispalay movements
+  displayMovements(acc.movements);
+
+  // Dispalay balance
+  calcDisplayBalance(acc);
+
+  // Dispalay summery
+  calcDisplaySummery(acc);
+};
 
 // Event handler
 let currentAccount;
@@ -126,6 +137,9 @@ btnLogin.addEventListener('click', function (e) {
   currentAccount = accounts.find(
     acc => acc.username === inputLoginUsername.value
   );
+
+  inputTransferAmount.value = inputTransferTo.value = '';
+
   // if (currentAccount &&currentAccount.pin === Number(inputLoginPin.value)) {
   if (currentAccount?.pin === Number(inputLoginPin.value)) {
     // Dispalay UI and Welcome message
@@ -133,22 +147,70 @@ btnLogin.addEventListener('click', function (e) {
       currentAccount.owner.split(' ')[0]
     }`;
     containerApp.style.opacity = 100;
-    
+
     // clear input fields
-    inputLoginUsername.value = inputLoginPin.value = ''
-    inputLoginPin.blur()
-
-    // Dispalay movements
-    displayMovements(currentAccount.movements);
-
-    // Dispalay balance
-    calcDisplayBalance(currentAccount.movements);
-
-    // Dispalay summery
-    calcDisplaySummery(currentAccount);
+    inputLoginUsername.value = inputLoginPin.value = '';
+    inputLoginPin.blur();
+    updateUI(currentAccount);
   }
 });
 
+btnTransfer.addEventListener('click', function (e) {
+  e.preventDefault();
+  const amount = Number(inputTransferAmount.value);
+  const receiverAcc = accounts.find(
+    acc => acc.username === inputTransferTo.value
+  );
+  if (
+    amount > 0 &&
+    receiverAcc &&
+    currentAccount.balance >= amount &&
+    receiverAcc?.ussername !== currentAccount.username
+  ) {
+    currentAccount.movements.push(-amount);
+    receiverAcc.movements.push(amount);
+
+    updateUI(currentAccount);
+  }
+});
+
+btnLoan.addEventListener('click', function (e) {
+  e.preventDefault();
+
+  const amount = Number(inputLoanAmount.value);
+
+  if (amount > 0 && currentAccount.movements.some(mov => mov >= amount * 0.1)) {
+    // Add movement
+    currentAccount.movements.push(amount);
+
+    // Update UI
+    updateUI(currentAccount);
+  }
+
+  inputLoanAmount.value = '';
+});
+
+btnClose.addEventListener('click', function (e) {
+  e.preventDefault();
+
+  if (
+    inputCloseUsername.value === currentAccount.username &&
+    Number(inputClosePin.value) === currentAccount.pin
+  ) {
+    const index = accounts.findIndex(
+      acc => acc.username === currentAccount.username
+    );
+
+    // Delete account
+    accounts.splice(index, 1);
+
+    // Hide UI
+    containerApp.style.opacity = 0;
+  }
+  inputCloseUsername.value = inputClosePin.value = '';
+});
+
+/*
 // const checkDogs = function (dogsJulia, dogsKate) {
 //   const dogsJuliaCorrected = dogsJulia.slice()
 //   dogsJuliaCorrected.splice(0, 1)
@@ -184,7 +246,7 @@ btnLogin.addEventListener('click', function (e) {
 
 // console.log(filterNumber(data, 9));
 
-const movements = [200, -200, 340, -300, -20, 50, 400, -460, 4000, -20];
+// const movements = [200, -200, 340, -300, -20, 50, 400, -460, 4000, -20];
 
 // const balance = movements.reduce(function(acc, cur, i , arr){
 //   console.log(`Iteration ${i}: ${acc}`);
@@ -218,3 +280,4 @@ const movements = [200, -200, 340, -300, -20, 50, 400, -460, 4000, -20];
 //     .reduce((acc, age, i, arr) => acc + age / arr.length, 0);
 
 // console.log(calcAverageHumanAge([5,2,1,4,15,8,3]));
+*/
